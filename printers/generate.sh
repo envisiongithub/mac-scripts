@@ -4,10 +4,10 @@
 QUEUE_NAME="Default_Printer"
 DESCRIPTION="Main Front Desk Acme Printer"
 DEVICE_URI="lpd://192.168.0.100/"
-DRIVER_PKG="/Library/Addigy/ansible/packages/Acme Printer Driver (1.0.0)/driver.pkg"
 PPD_FILE="/Library/Printers/PPDs/Contents/Resources/acme.ppd.gz"
 
 # OPTIONAL SETTINGS
+#DRIVER_PKG="/Library/Addigy/ansible/packages/Acme Printer Driver (1.0.0)/driver.pkg"
 #LOCATION="Main Office - Front Desk"
 #PPD_VERSION="1.0"
 #KEXT_TEAM_ID="6HB5Y2QTA3"
@@ -142,22 +142,26 @@ if [ -n "$KEXT_TEAM_ID" ]; then
 KEXT
 fi
 
-if [ -n "$PPD_VERSION" ]; then
-	/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
+if [ -n "$DRIVER_PKG" ]; then
+    if [ -n "$PPD_VERSION" ]; then
+        /bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
 
-		# Install driver if old or not present
-		if [ ! -f "$PPD_FILE" ] || ! is_at_least \$( /usr/bin/zgrep 'FileVersion' "$PPD_FILE" | /usr/bin/awk -F '"' '{print \$2}') ${PPD_VERSION}; then
-		    /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
-		fi
+            # Install driver if old or not present
+            if [ ! -f "$PPD_FILE" ] || ! is_at_least \$( /usr/bin/zgrep 'FileVersion' "$PPD_FILE" | /usr/bin/awk -F '"' '{print \$2}') ${PPD_VERSION}; then
+                /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
+            fi
 
 INSTDRIV
-else
-	/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
-		# Install driver if not present
-		if [ ! -f "$PPD_FILE" ]; then
-		    /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
-		fi
+    else
+        /bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
+
+            # Install driver if not present
+            if [ ! -f "$PPD_FILE" ]; then
+                /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
+            fi
+
 INSTDRIV
+    fi
 fi
 
 OPTION_STR=""
