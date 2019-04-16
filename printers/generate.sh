@@ -124,9 +124,11 @@ EOF
 echo "Generating install script..."
 
 echo "#/bin/bash" > "$QUEUE_NAME/install.sh"
+if [ -n "$KEXT_TEAM_ID" ] || [ -n "$PPD_VERSION" ]; then
+    echo -e "$FUNC" >> "$QUEUE_NAME/install.sh"
+fi
 
 if [ -n "$KEXT_TEAM_ID" ]; then
-	echo -e "$FUNC" >> "$QUEUE_NAME/install.sh"
 	/bin/cat >> "$QUEUE_NAME/install.sh" <<-KEXT
 
 		# Check for KEXT whitelisting
@@ -140,14 +142,29 @@ if [ -n "$KEXT_TEAM_ID" ]; then
 KEXT
 fi
 
+if [ -n "$PPD_VERSION" ]; then
+	/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
+
+		# Install driver if old or not present
+		if [ ! -f "$PPD_FILE" ] || ! is_at_least \$( /usr/bin/zgrep 'FileVersion' "$PPD_FILE" | /usr/bin/awk -F '"' '{print \$2}') ${PPD_VERSION}; then
+		    /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
+		fi
+
+INSTDRIV
+else
+	/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
+		# Install driver if not present
+		if [ ! -f "$PPD_FILE" ]; then
+		    /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
+		fi
+INSTDRIV
+fi
+
 OPTION_STR=""
 for OPTION in "${OPTIONS[@]}"; do
 	OPTION_STR="$OPTION_STR -o $OPTION"
 done
-/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTALL
-	# Install driver
-	/usr/sbin/installer -pkg "$DRIVER_PKG" -target /
-
+/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTQ
 	# Delete print queue if exists
 	if [[ -z \$( { /usr/bin/lpoptions -p $QUEUE_NAME -l > /dev/null; } 2>&1 ) ]]; then
 	    /usr/sbin/lpadmin -x $QUEUE_NAME
@@ -164,7 +181,7 @@ done
 	/bin/launchctl start org.cups.cupsd
 	echo "Done!"
 
-INSTALL
+INSTQ
 
 # Create remove script
 echo "Generating remove script..."
