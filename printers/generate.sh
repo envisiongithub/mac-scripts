@@ -57,14 +57,16 @@ echo "Generating condition script..."
 
 echo "#/bin/bash" > "$QUEUE_NAME/condition.sh"
 
-/bin/cat >> "$QUEUE_NAME/condition.sh" <<-DRIVEXIST
-	# Check if printer driver exists
-	if [ ! -f "$PPD_FILE" ]; then
-	    echo "Driver is not installed."
-	    exit 1
-	fi
+if [ -n "$DRIVER_PKG" ]; then
+	/bin/cat >> "$QUEUE_NAME/condition.sh" <<-DRIVEXIST
+		# Check if printer driver exists
+		if [ ! -f "$PPD_FILE" ]; then
+		    echo "Driver is not installed."
+		    exit 1
+		fi
 
 DRIVEXIST
+fi
 
 if [ -n "$PPD_VERSION" ]; then
 	echo -e "$FUNC" >> "$QUEUE_NAME/condition.sh"
@@ -125,7 +127,7 @@ echo "Generating install script..."
 
 echo "#/bin/bash" > "$QUEUE_NAME/install.sh"
 if [ -n "$KEXT_TEAM_ID" ] || [ -n "$PPD_VERSION" ]; then
-    echo -e "$FUNC" >> "$QUEUE_NAME/install.sh"
+	echo -e "$FUNC" >> "$QUEUE_NAME/install.sh"
 fi
 
 if [ -n "$KEXT_TEAM_ID" ]; then
@@ -143,31 +145,36 @@ KEXT
 fi
 
 if [ -n "$DRIVER_PKG" ]; then
-    if [ -n "$PPD_VERSION" ]; then
-        /bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
+	if [ -n "$PPD_VERSION" ]; then
+		/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
 
-            # Install driver if old or not present
-            if [ ! -f "$PPD_FILE" ] || ! is_at_least \$( /usr/bin/zgrep 'FileVersion' "$PPD_FILE" | /usr/bin/awk -F '"' '{print \$2}') ${PPD_VERSION}; then
-                /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
-            fi
-
-INSTDRIV
-    else
-        /bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
-
-            # Install driver if not present
-            if [ ! -f "$PPD_FILE" ]; then
-                /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
-            fi
+			# Install driver if old or not present
+			if [ ! -f "$PPD_FILE" ] || ! is_at_least \$( /usr/bin/zgrep 'FileVersion' "$PPD_FILE" | /usr/bin/awk -F '"' '{print \$2}') ${PPD_VERSION}; then
+			    /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
+			fi
 
 INSTDRIV
-    fi
+	else
+		/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
+
+			# Install driver if not present
+			if [ ! -f "$PPD_FILE" ]; then
+			    /usr/sbin/installer -pkg "$DRIVER_PKG" -target /
+			fi
+
+INSTDRIV
+	fi
 fi
 
 OPTION_STR=""
 for OPTION in "${OPTIONS[@]}"; do
 	OPTION_STR="$OPTION_STR -o $OPTION"
 done
+if [[ $PPD_FILE == drv* ]]; then
+	PPD_ARG="-m \"$PPD_FILE\""
+else
+	PPD_ARG="-P \"$PPD_FILE\""
+fi
 /bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTQ
 	# Delete print queue if exists
 	if [[ -z \$( { /usr/bin/lpoptions -p $QUEUE_NAME -l > /dev/null; } 2>&1 ) ]]; then
@@ -176,7 +183,7 @@ done
 	fi
 
 	# Create print queue
-	/usr/sbin/lpadmin -p "$QUEUE_NAME" -v "$DEVICE_URI" -D "$DESCRIPTION" -L "$LOCATION" -P "$PPD_FILE" -E $OPTION_STR
+	/usr/sbin/lpadmin -p "$QUEUE_NAME" -v "$DEVICE_URI" -D "$DESCRIPTION" -L "$LOCATION" $PPD_ARG -E $OPTION_STR
 	echo "$QUEUE_NAME print queue created."
 
 	# Restart CUPS
