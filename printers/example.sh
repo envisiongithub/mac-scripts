@@ -1,14 +1,15 @@
 # REQUIRED SETTINGS
-QUEUE_NAME="Sharp_188_Copier"
-DESCRIPTION="Main Copier - SHARP MX-5070N"
+QUEUE_NAME="ED-Sharp5070"
+DEVICE_MODEL="Sharp MX-5070N"
 DEVICE_URI="lpd://192.168.0.100/"
-DRIVER_PKG="/Library/Addigy/ansible/packages/Main Copier (1.0.0)/MX-C52.pkg"
 PPD_FILE="/Library/Printers/PPDs/Contents/Resources/SHARP MX-5070N.PPD.gz"
 
 # OPTIONAL SETTINGS
-LOCATION="Main Office - Printer Room"
+DEVICE_NICKNAME="Copier"
+DRIVER_PKG="/Library/Addigy/ansible/packages/Printer | ED Sharp 5070 Copier (1.0.0)/MX-C52.pkg"
+CLASS="P"
+ORGANIZATION="Envision Design"
 PPD_VERSION="1.14"
-#TEAM_ID="6HB5Y2QTA3"
 OPTIONS=(
 	"printer-is-shared=false"
 	"Option1=Finisher"
