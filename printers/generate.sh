@@ -2,13 +2,16 @@
 
 # REQUIRED SETTINGS
 QUEUE_NAME="Default_Printer"
-DESCRIPTION="Main Front Desk Acme Printer"
-DEVICE_URI="lpd://192.168.0.100/"
+DEVICE_MODEL="Acme Pro 100 MFP"
+DEVICE_URI="ipp://192.168.0.100/ipp/print"
 PPD_FILE="/Library/Printers/PPDs/Contents/Resources/acme.ppd.gz"
 
 # OPTIONAL SETTINGS
-#DRIVER_PKG="/Library/Addigy/ansible/packages/Acme Printer Driver (1.0.0)/driver.pkg"
-#LOCATION="Main Office - Front Desk"
+#DEVICE_NICKNAME="Front Desk"
+#DRIVER_PKG="/Library/Addigy/ansible/packages/Sprocket Acme (1.0.0)/driver.pkg"
+#DRIVER_TAR="/Library/Addigy/ansible/packages/Sprocket Acme (1.0.0)/driver.tar.gz"
+#CLASS="D"
+#ORGANIZATION="Sprocket Co"
 #PPD_VERSION="1.0"
 #KEXT_TEAM_ID="6HB5Y2QTA3"
 #OPTIONS=(
@@ -57,7 +60,7 @@ echo "Generating condition script..."
 
 echo "#/bin/bash" > "$QUEUE_NAME/condition.sh"
 
-if [ -n "$DRIVER_PKG" ]; then
+if [ -n "$DRIVER_PKG" ] || [ -n "$DRIVER_TAR" ]; then
 	/bin/cat >> "$QUEUE_NAME/condition.sh" <<-DRIVEXIST
 		# Check if printer driver exists
 		if [ ! -f "$PPD_FILE" ]; then
@@ -164,6 +167,26 @@ INSTDRIV
 
 INSTDRIV
 	fi
+elif [ -n "$DRIVER_TAR" ]; then
+	if [ -n "$PPD_VERSION" ]; then
+		/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
+
+			# Install driver if old or not present
+			if [ ! -f "$PPD_FILE" ] || ! is_at_least \$( /usr/bin/zgrep 'FileVersion' "$PPD_FILE" | /usr/bin/awk -F '"' '{print \$2}') ${PPD_VERSION}; then
+			    /usr/bin/tar -xzf "$DRIVER_TAR" -C /Library/Printers/PPDs/Contents/Resources/
+			fi
+
+INSTDRIV
+	else
+		/bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTDRIV
+
+			# Install driver if not present
+			if [ ! -f "$PPD_FILE" ]; then
+			    /usr/bin/tar -xzf "$DRIVER_TAR" -C /Library/Printers/PPDs/Contents/Resources/
+			fi
+
+INSTDRIV
+	fi
 fi
 
 OPTION_STR=""
@@ -174,6 +197,13 @@ if [[ $PPD_FILE == drv* ]]; then
 	PPD_ARG="-m \"$PPD_FILE\""
 else
 	PPD_ARG="-P \"$PPD_FILE\""
+fi
+if [ -n $DEVICE_NICKNAME ]; then
+	DESCRIPTION="$DEVICE_NICKNAME - $DEVICE_MODEL"
+	LOCATION="$ORGANIZATION - $DEVICE_NICKNAME"
+else
+	PPD_ARG="$DEVICE_MODEL"
+	LOCATION="$ORGANIZATION"
 fi
 /bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTQ
 	# Delete print queue if exists
