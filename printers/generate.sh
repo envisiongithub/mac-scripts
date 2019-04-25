@@ -198,7 +198,7 @@ if [[ $PPD_FILE == drv* ]]; then
 else
 	PPD_ARG="-P \"$PPD_FILE\""
 fi
-if [ -n $DEVICE_NICKNAME ]; then
+if [ -n "$DEVICE_NICKNAME" ]; then
 	DESCRIPTION="$DEVICE_NICKNAME - $DEVICE_MODEL"
 	LOCATION="$ORGANIZATION - $DEVICE_NICKNAME"
 else
