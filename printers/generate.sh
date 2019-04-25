@@ -58,7 +58,7 @@ echo "Generating install files for $QUEUE_NAME..."
 # Create condition script
 echo "Generating condition script..."
 
-echo "#/bin/bash" > "$QUEUE_NAME/condition.sh"
+echo "#!/bin/bash" > "$QUEUE_NAME/condition.sh"
 
 if [ -n "$DRIVER_PKG" ] || [ -n "$DRIVER_TAR" ]; then
 	/bin/cat >> "$QUEUE_NAME/condition.sh" <<-DRIVEXIST
@@ -128,7 +128,7 @@ EOF
 # Create install script
 echo "Generating install script..."
 
-echo "#/bin/bash" > "$QUEUE_NAME/install.sh"
+echo "#!/bin/bash" > "$QUEUE_NAME/install.sh"
 if [ -n "$KEXT_TEAM_ID" ] || [ -n "$PPD_VERSION" ]; then
 	echo -e "$FUNC" >> "$QUEUE_NAME/install.sh"
 fi
@@ -227,7 +227,7 @@ INSTQ
 # Create remove script
 echo "Generating remove script..."
 
-echo "#/bin/bash" > "$QUEUE_NAME/remove.sh"
+echo "#!/bin/bash" > "$QUEUE_NAME/remove.sh"
 echo "/usr/sbin/lpadmin -x $QUEUE_NAME" >> "$QUEUE_NAME/remove.sh"
 
 echo "Done!"
