@@ -5,7 +5,7 @@ For creating custom software items in Addigy that install the driver and configu
 - Begin a new custom software item in Addigy and upload the driver package or tarball
 - Edit [generate.sh](generate.sh) with the settings for your printer
 - Run [generate.sh](generate.sh) (locally)
-- Copy the contents of the three generated files to the respective fields in the Addigy custom software item
+- Copy the contents of the three generated files to the respective fields in the Addigy custom software item. For the Conditions script, switch off "Install On Success"
 - Repeat for additional printers
 
 ## Settings
