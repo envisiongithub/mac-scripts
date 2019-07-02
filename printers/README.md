@@ -13,6 +13,7 @@ For creating custom software items in Addigy that install the driver and configu
 - `DEVICE_MODEL` - (required) can be the CUPS `MakeModel`, will be part of the CUPS `Info`
 - `DEVICE_URI` - (required) the CUPS `DeviceURI`, hopefully you’re using static IPs…
 - `PPD_FILE` - (required) path to the installed PPD
+- `OLD_QUEUE` - array of queues this installer is replacing
 - `DEVICE_NICKNAME` - e.g., Copier, Plotter, By Jane; will be part of the CUPS `Info` and `Location`
 - `DRIVER_PKG` - if there’s a `.pkg` specify it’s path here
 - `DRIVER_TAR` - if there’s no `.pkg`, create a tarball of the PPD and specify it’s path here
