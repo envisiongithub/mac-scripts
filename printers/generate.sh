@@ -7,6 +7,7 @@ DEVICE_URI="ipp://192.168.0.100/ipp/print"
 PPD_FILE="/Library/Printers/PPDs/Contents/Resources/acme.ppd.gz"
 
 # OPTIONAL SETTINGS
+#OLD_QUEUE=( "" )
 #DEVICE_NICKNAME="Front Desk"
 #DRIVER_PKG="/Library/Addigy/ansible/packages/Sprocket Acme (1.0.0)/driver.pkg"
 #DRIVER_TAR="/Library/Addigy/ansible/packages/Sprocket Acme (1.0.0)/driver.tar.gz"
@@ -174,6 +175,7 @@ elif [ -n "$DRIVER_TAR" ]; then
 			# Install driver if old or not present
 			if [ ! -f "$PPD_FILE" ] || ! is_at_least \$( /usr/bin/zgrep 'FileVersion' "$PPD_FILE" | /usr/bin/awk -F '"' '{print \$2}') ${PPD_VERSION}; then
 			    /usr/bin/tar -xzf "$DRIVER_TAR" -C /Library/Printers/PPDs/Contents/Resources/
+			    /bin/chmod 644 "$PPD_FILE"
 			fi
 
 INSTDRIV
@@ -183,10 +185,33 @@ INSTDRIV
 			# Install driver if not present
 			if [ ! -f "$PPD_FILE" ]; then
 			    /usr/bin/tar -xzf "$DRIVER_TAR" -C /Library/Printers/PPDs/Contents/Resources/
+			    /bin/chmod 644 "$PPD_FILE"
 			fi
 
 INSTDRIV
 	fi
+fi
+
+/bin/cat >> "$QUEUE_NAME/install.sh" <<-'MCXQ'
+	# Delete old MCX print queues if exist
+	if /usr/bin/lpstat -p | /usr/bin/grep "mcx_" > /dev/null 2>&1; then
+	    /usr/bin/lpstat -p | /usr/bin/awk '{print $2}' | /usr/bin/grep "mcx_" | while read -r MCX_Q; do
+	        /usr/sbin/lpadmin -x $MCX_Q
+	    done
+	    echo "MCX print queues deleted."
+	fi
+MCXQ
+
+if [ -n "$OLD_QUEUE" ]; then
+	for i in "${OLD_QUEUE[@]}"; do
+		/bin/cat >> "$QUEUE_NAME/install.sh" <<-OLDQ
+			# Delete old print queue if exists
+			if /usr/bin/lpstat -p | /usr/bin/grep $i; then
+			    /usr/sbin/lpadmin -x "$i"
+			    echo "Old print queue $i deleted."
+			fi
+OLDQ
+	done
 fi
 
 OPTION_STR=""
@@ -207,9 +232,9 @@ else
 fi
 /bin/cat >> "$QUEUE_NAME/install.sh" <<-INSTQ
 	# Delete print queue if exists
-	if [[ -z \$( { /usr/bin/lpoptions -p $QUEUE_NAME -l > /dev/null; } 2>&1 ) ]]; then
+	if /usr/bin/lpstat -p | /usr/bin/grep $QUEUE_NAME; then
 	    /usr/sbin/lpadmin -x $QUEUE_NAME
-	    echo "Old print queue deleted."
+	    echo "Existing print queue deleted."
 	fi
 
 	# Create print queue
